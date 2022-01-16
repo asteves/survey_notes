@@ -1,0 +1,238 @@
+---
+title: "Sampling Notes"
+author: "Alex Stephenson"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning = FALSE, messages = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sampling)
+library(SDAResources)
+```
+
+## Introduction 
+
+These are notes based on Sampling by *Sharon Lohr*. 
+
+## Chapter 1 
+
+### Vocabulary 
+
+*Bias*: Systematic error in the sampling, measurement, or estimation procedure that results in a statistic being consistently different than the population characteristic $E[\hat{\tau}] \neq \tau$ even with infinite data. 
+
+*Convenience sample*: A sample in which the primary consideration for sample selection is the ease with which units can be recruited. 
+
+*Measurement error*: The difference between the response coded and the true value of the characteristic being studied for a respondent. 
+*Nonsampling error*: An error for any source other than sampling error. For example, undercoverage, nonresponse, measurement error. 
+
+*Observation unit*: An object on which a measurement is taken in the survey. 
+
+*Representative sample*: A sample that can be used to estimate quantitites of interest in a population and provide measures of accuracy about the estimates. 
+
+*Sampled population*: The collection of all possible observation units that might have been chosen using the sampling procedure. 
+
+*Sampling error*: Error in estimation due to taking a sample instead of measuring every unit in the population. 
+
+*Sampling frame*: A list, map, or other specification of units in the population from which a sample may be selected. Examples are list of college students, a map of a village, or a phonebook. 
+
+*Sampling unit*: An object that can be sampled from the population. 
+
+*Selection bias*: Bias that occurs because the actual probabilities with which units are sampled differ from the selection probabilities specified by the investigator. 
+
+*Target population*: The set of units that the researcher wants to study. 
+
+### Questionnaire Design 
+
+1. Test questions before taking the survey. 
+2. Keep questions simple and clear
+3. Define the terms in the question to avoid confusion. 
+4. Relate all question to the concept of interest. 
+5. Decide whether to use open or closed questions. 
+  - *open questions* allow respondents to form their own response categories. If using a closed-ended question always have an other category. 
+6. Pay attention to response option scales. 
+7. Avoid questions that prompt or motivate respondent to answer in a particular way. These are *loaded* questions. 
+8. Consider social desirability of responses to questions and write questions and use modes that elicit accurate responses. 
+9. Avoid double negatives in questions. 
+10. Use forced choice rather than agree/disagree questions. 
+11. Ask only one concept per question. Compound or *double-barreled* questions will lead to confusion by respondents. 
+12. Pay attention to question order effects. If you ask more than one question on a topic, it is usually better to ask the general question first followed by specific questions. 
+
+## Chapter 2 
+
+### Vocabulary 
+
+*Simple Random Sample (SRS)*: A sample of size *n* is taken when every possible subset of *n* units in the population has the same chance of being in the sample. 
+  - With replacement can be thought of as drawing n independent samples of size 1 from a population of N units. 
+  - without replacement is when a sample of size n is selected that every possible subset of n distinct units in the population has the same probability of being selected as the sample. 
+  
+In a simple random sample without replacement, the probability that unit *i* of the population appears in the sample is $\pi_i = \frac{n}{N}$. The *sample weight* for each unit in the sample is $w_i = \frac{1}{\pi_i} = \frac{N}{n}$ because each unit in the sample can be thought of as representing $\frac{N}{n}$ units in the population.
+
+*Stratified Random Sample*: Population is divided into subgroups (known as strata). A SRS is taken from each stratum independent of the other strata. 
+
+*Cluster sample*: Observation units are aggregated into larger sampling units. SRS is taken at the aggregated level. If in an experimental context, all members of a cluster must receive the same treatment assignment. 
+
+*Systematic sample*: A starting point is chosen from a list of population members using a random numbers. That unit and every $k^{th}$ unit thereafter is chosen to be in the sample. 
+
+*Sampling distribution*: The distribution of different values of the statistic obtained by the process of taking all possible samples from the population. 
+
+*Coefficient of variation (CV)*: The CV of a statistic $\theta$ where $E[\hat{\theta}] > 0$ is CV $\hat{\theta} = \sqrt{\frac{V[\hat{\theta}]}{E[\hat{\theta}]}}$. The estimated CV is equivalently the standard error of the statistic over its expectation. 
+
+*Coverage Probability*: The expected proportion of CIs from repeated samples that include the true value of the population quantity. 
+
+*Confidence Interval (CI)*: An interval estimate for a population quantity where the probability that the random interval contains the true value of the population quantity is known.
+
+*Finite population correct (fpc)*: A correction factor when multiplied by the with-replacement variance gives the without replacement variance. For a SRS of size n from a population of size N, the fpc = $1 - \frac{n}{N}$
+
+*Margin of error*: Half the width of a symmetric 95% CI. 
+
+*Sampling weight*: The reciprocal of the inclusion probability $w_i = \frac{1}{\pi_i}$
+
+### Code examples 
+
+Simple random sample 
+```{r}
+set.seed(1234)
+sample(1:10, 4, replace = TRUE)
+
+```
+
+Simple Random sample without replacement 
+
+```{r}
+## base R 
+sample(1:10, replace = FALSE)
+
+sampleFrame <- sampling::srswor(4,10)
+c(1:10)[sampleFrame == 1]
+```
+
+SRS of a dataset
+
+```{r}
+## data from SDAResources 
+data(agpop)
+set.seed(1234)
+N <- nrow(agpop)
+index <- sample(N, 300, replace = TRUE)
+
+sample_agpop <- agpop[c(index),]
+head(sample_agpop)
+
+### a dplyr solutions 
+set.seed(1234)
+agpop %>% 
+  dplyr::slice_sample(n = 300)
+```
+
+
+### Exercises 
+
+```{r}
+# 1 
+## functions 
+make_samples <- function(vec, nrow){
+  mat <- (matrix(vec, nrow = nrow))
+  return(mat)
+}
+
+evaluate_plan <- function(y, mat, weights){
+  pop_mean <- mean(y)
+  vals <- vector(mode = "numeric", length = nrow(mat))
+  for(i in 1:nrow(mat)){
+    vals[i] <- mean(y[mat[i,]])
+  }
+  print(vals)
+  # weighted average 
+  expected_val <- sum(vals/weights)
+  # weighted variance 
+  var_val <- sum(((vals - pop_mean)^2)/weights)
+  bias <- expected_val - pop_mean
+  mse <- var_val + bias^2
+  output <- c(expected_val, var_val, bias, mse)
+  names(output)<- c("Expected Value", "Variance", "Bias", "MSE")
+  return(output)
+}
+
+sample_plan <- function(y, plan, n, weights){
+  # weights should be a vector of whole integer
+  mat <- make_samples(plan, n)
+  print(mat)
+  evaluate_plan(y, mat, weights)
+}
+y <- c(98, 102, 154, 133, 190, 175)
+
+plan1 <- c(1,3,5,1,3,6,1,4,5,1,4,6,
+           2,3,5,2,3,6,2,4,5,2,4,6)
+plan2 <- c(c(1,2,1), c(4,3,3),c(6,6,5))
+
+sample_plan(y, plan1, 8, weights = rep(c(8),8)) 
+sample_plan(y, plan2, 3, weights = c(4,2,4))
+
+# Plan 1 is better. It has a lower MSE
+```
+
+```{r}
+# 2.4
+# For the population in Ex 2.2 find the sampling distribution of y for an SRS of size 3 without replacement and a SRSWR of size 3. For each draw the histogram of the sampling distribution of y. Which sampling distribution has the smaller variance and why?
+y <-c(1,2,4,4,7,7,7,8)
+
+
+# There are 8 choose 3 samples available for this SRS 
+choose(8,3)
+
+# get the sampling distribution 
+get_samples <- function(y, N, n){
+  # Get all unique combinations 
+  mat <- t(combn(N,n))
+  vals <- vector(mode = "numeric", choose(8,3))
+  for(i in 1:nrow(mat)){
+    # get the expected value for each sample
+    vals[i] <- mean(y[mat[i,]])
+  }
+  # make a sampling distribution histogram 
+  hist <- ggplot(data.frame(vals = vals), aes(x = vals))+
+    geom_histogram(bins = 30)
+  # get out the unique values 
+  probs <- as.vector(table(vals))/choose(N,n)
+  vals <- sort(unique(round(vals,2)))
+  E_y <- round(sum(vals*probs),3)
+  V_y <- round(sum(((vals - E_y)^2)*(probs)),3)
+  return(list(E_y, V_y, hist))
+}
+
+get_samples(y, 8, 3)
+```
+
+```{r}
+## Exercise 2.5 
+srs30 <- SDAResources::srs30 %>%pull()
+
+# the sample is taken via SRS of size 30 from a population of 100 
+## What is the sampling weight for each unit?
+sampling_weight <- function(pop, size){
+  return(pop/size)
+}
+
+sampling_weight(100,30)
+
+## estimate the population total t 
+## Since this is an SRS with replacement the sampling weights are equal for all units
+total <- sum(srs30*100/30)
+
+## Give a 95% CI for t. Does the fpc make a difference 
+## Step 1: Get the variance 
+fpc <- function(pop, sample){
+  return(1 - 30/100)
+}
+V_t <- 100^2*fpc(100,30)*(var(srs30)/30)
+SE_t <- sqrt(V_t)
+lwr_bound <- total - 2.045*SE_t
+upp_bound <- total + 2.045*SE_t
+c(lwr_bound, upp_bound)
+
+## How big is the fpc 
+fpc(100,30)
+
+## Here the fpc is .7 which reduces the size of the CI 
+```
