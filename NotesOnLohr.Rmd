@@ -58,7 +58,7 @@ These are notes based on Sampling by *Sharon Lohr*.
 11. Ask only one concept per question. Compound or *double-barreled* questions will lead to confusion by respondents. 
 12. Pay attention to question order effects. If you ask more than one question on a topic, it is usually better to ask the general question first followed by specific questions. 
 
-## Chapter 2 
+## Chapter 2: Simple Random Sampling
 
 ### Vocabulary 
 
@@ -236,3 +236,87 @@ fpc(100,30)
 
 ## Here the fpc is .7 which reduces the size of the CI 
 ```
+
+## Chapter 3: Stratified Sampling 
+
+### Vocabulary 
+
+### Code Examples 
+
+Allocation Methods 
+
+```{r}
+data(agpop)
+
+## Get population counts for each region 
+agpop %>% 
+  group_by(region)%>%
+  count()
+
+## Proportional allocation 
+# stratum sample sizes proportional to population stratum sizes N_h. Assume a sample of n = 300 
+popsize <- agpop %>% 
+  group_by(region)%>%
+  count()%>%
+  pull(n)
+
+propalloc <- round(300*popsize/sum(popsize))
+propalloc
+# confirm straum sizes sum to 300 
+sum(propalloc)
+
+## Neyman allocation 
+stratvec <- c(1.1, 0.8, 1.0, 2.0)
+neymanalloc <- 300*(popsize*sqrt(stratvec))/sum(popsize*sqrt(stratvec))
+round(neymanalloc)
+
+## Optimal allocation 
+relcost <- c(1.4, 1.0, 1.0, 1.8)
+optalloc <- round(300*(popsize*sqrt(stratvec/relcost))/sum(popsize*sqrt(stratvec/relcost)))
+optalloc
+
+## show all in table 
+allocs <- tibble(population = popsize,
+                 propalloc = propalloc,
+                 neyman = neymanalloc,
+                 optimal = optalloc)%>%
+  mutate(county = c("NC", "NE", "S", "W"))%>%
+  pivot_longer(-county, names_to = "allocation", values_to = "n")%>%
+  pivot_wider(names_from = "allocation", values_from = "n")
+allocs
+```
+
+Selecting a Stratified Random Sample 
+
+```{r}
+## using agpop with region strata 
+# proportional allocation 
+county <- as.vector(allocs$county)
+sampsize <- as.vector(allocs$propalloc)
+set.seed(108742)
+index <- NULL
+for(i in 1:length(sampsize)){
+  index <- c(index, sample((1:nrow(agpop))[agpop$region==county[i]],
+             size = sampsize[i], replace = F))
+}
+
+strsample <- agpop[index,]
+table(strsample$region)
+
+### Tidy way 
+set.seed(108742)
+strsample2 <- agpop %>% 
+  group_nest(region)%>%
+  rowwise()%>%
+  mutate(
+    # Here we use 300 because we want a total sample 
+    # of 300 as problem stated 
+    samplez = round(300*nrow(data)/nrow(agpop)),
+    sample = list(sample_n(data, size = samplez))
+  )%>%
+  select(-c(data, samplez))%>%
+  unnest(sample)
+```
+
+
+### Exercises 
