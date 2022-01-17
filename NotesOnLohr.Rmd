@@ -237,9 +237,89 @@ fpc(100,30)
 ## Here the fpc is .7 which reduces the size of the CI 
 ```
 
+```{r}
+# Exercise 2.15 
+data <- tibble(
+  age = 9:20,
+  num = c(13,35,44,69,36,24,7,3,2,5,1,1)
+)
+
+# Make histogram 
+data %>% 
+  ggplot(aes(x = age, y = num))+
+  geom_col()
+
+## the sampling distribution of the sample average will be 
+# normally distributed due to the CLT 
+
+# mean, se, 95% CI for average onset 
+avg = weighted.mean(data$age, data$num)
+
+# alternatively 
+avg = mean(c(rep(data$age, data$num)))
+
+v_y = var(c(rep(data$age, data$num)))
+
+# alternatively 
+v_y = round(sum(((data$age - avg)^2)*(data$num/sum(data$num))),1)
+
+se_y = sqrt(v_y/240)
+lwr_bound <- avg - 1.96*se_y
+upp_bound <- avg + 1.96*se_y
+c(lwr_bound, upp_bound)
+
+## Suppose the researchers wanted to do another study in a different region. and wanted a 95% CI to have margin of error 0.5. What sample size would they need 
+
+# The formula for this $n_0 = \frac{CI_\alpha S^2}{e^2}
+n = round(((1.96^2)*(3.705))/0.5^2)
+
+```
+
 ## Chapter 3: Stratified Sampling 
 
+Why do we want to stratify? 
+
+1. We want to be protected from the possibility of obtaining a really bad sample. 
+
+2. We want data of known precision for subgroups in a population. 
+
+3. A stratified sample may be more convenient to administer and may result in a lower cost for the survey 
+
+4. Stratified sampling often gives more precise (having lower variance) estimates for population means and totals
+
+The three major design issues for stratified sampling are how to define the strata, how to choose the total sample size, and how to allocate observations to defined strata. 
+
+*Which allocation to use?*
+
+Use proportional allocation if you want the sample to be a miniature version of the population. Neyman allocation specifies oversampling strata that have higher variances.
+
 ### Vocabulary 
+
+*Notation*
+
+| Formula | Description |
+|---------|-----------|
+|$N_h$|number of population units in stratum *h*|
+|$y_{hj}$|value of $j^{th}$ unit in stratum *h*|
+|$t_h = \sum_{j=1}^{N_h} y_{hj}$|population total in stratum *h*|
+|$t = \sum_{h=1}^{H} t_h$|overall population total|
+|$\bar{y}_h = \frac{1}{N_h}\sum_{j=1}^{N_h} y_{hj}$|population mean in stratum *h*|
+|$\bar{y} = \frac{1}{N}\sum_{h=1}^H\sum_{j=1}^{N_h} y_{hj}$|overall population mean|
+|$S^2_h = \frac{1}{N_h-1}\sum_{h=1}^{N_h} (y_{hj}-\bar{y}_h)^2$| population variance in stratum *h*|
+
+*Certainty stratum*: A stratum in which all units are selected to be in the sample, the inclusion probability for each unit in the stratum equals 1. 
+
+*Disproportional allocation*: Allocation of sampling units to strata so that the sampling fractions $\frac{n_h}{N_h}$ are unequal. 
+
+*Optimal allocation*: Allocation of sampling units to strata so that the variance of the estimator is minimized for a given total cost. 
+
+*Oversampling*: Selecting more observations in a stratum than would be called for in proportional allocation. An oversampled stratum has $\frac{n_h}{N_h} > \frac{n}{N}$
+
+*Proportional allocation*: Allocation of sampling units to strata so that $\frac{n_h}{N_h} = \frac{n}{N}$ for each stratum.
+
+*Stratified Random Sampling*: Probability sampling method in which population units are partitioned into strata and then an SRS is taken from each stratum. 
+
+*Stratum*: A subpopulation in which an independent probability sample is taken. Every unit in the population is in exactly one stratum. The strata together comprise the entire population. 
 
 ### Code Examples 
 
@@ -291,12 +371,13 @@ Selecting a Stratified Random Sample
 ```{r}
 ## using agpop with region strata 
 # proportional allocation 
+N <- nrow(agpop)
 county <- as.vector(allocs$county)
 sampsize <- as.vector(allocs$propalloc)
 set.seed(108742)
 index <- NULL
 for(i in 1:length(sampsize)){
-  index <- c(index, sample((1:nrow(agpop))[agpop$region==county[i]],
+  index <- c(index, sample((1:N)[agpop$region==county[i]],
              size = sampsize[i], replace = F))
 }
 
