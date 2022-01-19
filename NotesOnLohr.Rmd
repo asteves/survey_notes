@@ -401,3 +401,69 @@ strsample2 <- agpop %>%
 
 
 ### Exercises 
+
+```{r}
+# 3.3 
+students <- tibble(
+  student = 1:6, 
+  score = c(66,59,70,83,82,71)
+)
+
+# a find mean and variance of population 
+students %>% 
+  summarise(
+    avg = mean(score),
+    var = var(score)
+  )
+# b 
+choose(6,4)
+
+# d
+choose(3,2)*choose(3,2)
+```
+
+```{r}
+# 3.4 
+returns <- 
+acls <- tibble(
+  discipline = c(1:7),
+  agree = c(37,23,23,29,19,43,41)/100,
+  membership = c(9100, 1950, 5500, 10850,2100,5500,9000)
+)
+
+acls %>% 
+  mutate(weighted_avg = (membership)/sum(membership) * agree)%>%
+  summarise(avg = sum(weighted_avg))
+```
+
+
+```{r}
+# 3.6 
+# “Suppose that a city has 90,000 dwelling units, of which 35,000 are houses, 45,000 are apartments, and 10,000 are condominiums. “You believe that the mean electricity usage is about twice as much for houses as for apartments or condominiums, and that the standard deviation is proportional to the mean so that S1=2S2=2S3. How would you allocate a stratified sample of 900 observations if you wanted to estimate the mean electricity consumption for all households in the city?”
+
+# Use Neyman allocation 
+popsize <- c(35000,45000,10000)
+stratvec <- c(4, 1, 1) # relative standard deviation implies squaring each sd. 
+neymanalloc <- 900*(popsize*sqrt(stratvec))/sum(popsize*sqrt(stratvec))
+round(neymanalloc)
+
+
+# b Suppose you take a stratified random sample with proportional allocation and want to estimate the overall proportion of households in which energy conservation is practiced. If 45% of house dwellers, 25% apts, 3% condos what is p? What gain would the stratified sample offer of SRS. E.g what is V_prop[P_stratified]/V_srs[P_srs]
+## Proportional allocation 
+# stratum sample sizes proportional to population stratum sizes N_h. Assume a sample of n = 300 
+propalloc <- round(900*popsize/sum(popsize))
+propalloc
+
+# get variance 
+weights <- (propalloc/900)^2
+proportions <- c((.45)*.55, .25*.75, .03*.97)/propalloc
+p1 <-sum(weights*proportions)
+
+## suppose the proportions hold in the population 
+p2 <- sum(c(.45, .25, .03)*propalloc/900)
+p2_v <- (p2 *(1-p2))/900
+# efficiency gain (aka the design effect)
+p1/p2_v
+
+# Here we only need .9144n observations taken in a stratified sample with proportional allocation to achieve the same variance as in an SRS with n observations
+```
