@@ -467,3 +467,129 @@ p1/p2_v
 
 # Here we only need .9144n observations taken in a stratified sample with proportional allocation to achieve the same variance as in an SRS with n observations
 ```
+
+```{r}
+numPubs = 0:8
+numbio = c(1,2,0,1,0,2,0,1,0)
+numphy = c(10,2,0,1,2,1,1,0,2)
+numsoc = c(9,0,1,0,2,0,1,0,0)
+numhum = c(8,2,0,1,0,0,0,0,0)
+
+## Get averages within strata 
+sampBio <- 7
+sampHum <- 11
+sampPhys <- 19
+sampSoc <- 13
+
+avgB <- sum(pubs*numbio)/sampBio
+avgH <- sum(pubs*numhum)/sampHum
+avgP <- sum(pubs*numphy)/sampPhys
+avgS <- sum(pubs*numsoc)/sampSoc
+
+## Getting variances 
+vB <- var(rep(pubs, numbio))
+vP <- var(rep(pubs, numphy))
+vH <- var(rep(pubs, numhum))
+vS <- var(rep(pubs, numsoc))
+
+## put into data frame 
+data <- tibble(
+  dep = c("bio", "phy", "soc", "hum"),
+  average = c(avgB, avgP, avgS, avgH),
+  variance = c(vB, vP, vS, vH),
+  sampleSize = c(7, 19,13,11),
+  totalFac = c(102, 310, 217, 178)
+)
+# totals
+data %>% 
+  summarise(totals = sum(average*totalFac),
+            se_total = sqrt(sum(totalFac^2*(1 - sampleSize/totalFac)*(variance/sampleSize))))
+
+## Estimate proportion of faculty with 0 pubs 
+N <- 807
+props <- c(1/7, 10/19, 9/13, 8/11)
+nH <- c(7,19,13,11)
+# Total proportion 
+Nh <- c(102, 310, 217, 178)
+totalPop <- c(102, 310, 217, 178)/N
+totals <- sum(props*totalPop)
+
+## get variance 
+propVar <- function(nH, Nh, p, N){
+  return((1- (nH/Nh))*(Nh^2/N^2)*(p*(1-p)/(nH-1)))
+}
+var <- NA
+for(i in 1:4){
+  var[i] <- propVar(nH[i], Nh[i], props[i], N)
+}
+sqrt(sum(var))
+```
+
+## Chapter 4: Ratio And Regression Estimation
+
+### General Notes 
+
+The ratio of two variables $t_y = \sum_{i = 1}^{N}y_i$ and $t_x = \sum{i = 1}^{N}x_i$ is $B = \frac{t_y}{t_x}$. 
+
+In the simplest use of ratio estimation, an SRS of size *n* is taken and the information in both x and y is used to estimate $B$, $t_y$, or another statistic. 
+
+Why use ratio estimation? 
+
+1. We want to estimate a ratio of some kind. To determine whether you need to use ratio estimation for a quantity ask "If I took a different sample, would the denominator be a different number?" If yes, then you have a ratio estimator.
+
+2. We want to estimate a population total but the population size *N* is unknown. 
+
+3. Ratio estimation is often used to increase the precision of estimated means and totals. 
+
+4. Ratio estimation is used to adjust estimates from the sample so that they reflect demographic totals.
+
+5. Ratio estimation may be used to adjust for nonresponse. 
+
+Note that in general ratio estimators are usually biased for estimating population quantities. 
+
+*Table of Estimators and Residuals for ratio and regression estimators* 
+
+|Estimator|Formula|Residual $e_i$|
+|---------|-------|--------------|
+|SRS|$\hat{t}_y$|$y_i - \bar{y}$|
+|Ratio|$\hat{t}_{yr} = \hat{t}_y\frac{t_x}{\hat{t}_x}$|$y_i - \hat{B}x_i$|
+|Regression|$\hat{t}_{reg} = N[\bar{y} + \hat{B}_1(\bar{x}_u -\bar{x})]$|$y_i - \hat{B}_0 - \hat{B}_1x_i$|
+
+
+### Vocabulary 
+
+*Auxillary variable*: A variable that is used to improve the sampling desing or to help with the estimation of variables of interest. The auxilliary variable is often known for every unit in the population. 
+
+*Calibration*: A procedure in which weights are adjusted so that estimated population totals of auxillary variables agree with the known population totals of those variables. 
+
+*Domain*: A subpopulation for which estimates are desired. The domain sample sizes are generally random variables. 
+
+*Population Correlation Coefficient*: $R = \frac{\sum_{i=1}^{N}(x_i - \bar{x})(y -\bar{y})}{(N-1)S_xS_y}$ where $S_i$ is the standard deviation of the variable and R is the Pearson correlation coefficient of the variables for the *N* units in the population. 
+
+*Poststratification*: A form of ratio estimation in which sampled units are divided into subgroups based on characteristics measured in the sample. The weights in each subgroup are adjusted so that they sum to the population size of that subgroup (assumed known). 
+
+*Ratio estimator*: An estimator of the population mean or total based on a ratio with an auxiliary quantity for which the population mean or total is known. 
+
+*Regression estimator*: An estimator of the population mean or total based on a regression model using an auxiliary quantity for which the population mean or total is known. 
+### Code Samples 
+
+Example 4.4 
+
+```{r}
+ex44 <- tibble(
+  unit = 1:8,
+  x = c(4,5,5,6,8,7,7,5),
+  y = c(1,2,4,4,7,7,7,8)
+)
+
+# calculate population quantities since we know entire population and sampling distribution
+ex44 %>% 
+  summarise(tx = sum(x),
+            ty = sum(y),
+            Sx = sqrt(var(x)),
+            Sy = sqrt(var(y)),
+            R = cor(x,y),
+            B = ty/tx)
+
+```
+### Exercises 
