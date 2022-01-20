@@ -593,3 +593,40 @@ ex44 %>%
 
 ```
 ### Exercises 
+
+
+## Chapter 5: Cluster Sampling 
+
+Why use cluster sampling 
+
+1. Constructing a sampling frame list of observation units may be difficult, expensive, or impossible. 
+
+2. The population may be widely distributed geographically or may occur in natural clusters such as households or schools. Members of the same cluster tend to be more similar than elements selected at random from the whole population. A consequence of this is that cluster sampling generally has less precission than SRS or stratification. 
+
+![](img/clusterFormula.png)
+
+![](img/clusterNotation.png)
+
+*Designing a Cluster Sample* 
+
+There is a need to address four major issues 
+
+1. What overall precision is needed? 
+2. What size should the clusters be?
+3. How many ssus should be sampled in each cluster selected for the sample? 
+4. How many clusters should be sampled? 
+
+### Vocabulary 
+
+*Cluster*: A group of observation units that serve as a sampling unit 
+*Cluster sampling*: A probability sampling design in which observations are grouped into clusters, and a probability sample of clusters is selected from the population of clusters. 
+
+*Intraclass/Intracluster correlation coefficient*: The Pearson correlation coefficient of all pairs of units within the same cluster. 
+
+*One-stage cluster sampling*: A cluster sampling design in which all ssus in selected psus are included in the sample 
+
+*Primary sampling unit (psu)*: The unit that is sample from the population. Also known as the cluster 
+
+*Secondary sampling unit (ssu)*: a subunit that is sampled from a psu that has been selected in the sample. 
+
+*Two stage cluster sampling*: A cluster sampling design in which the ssus in selected psus are sampled. 
