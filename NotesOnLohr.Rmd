@@ -630,3 +630,13 @@ There is a need to address four major issues
 *Secondary sampling unit (ssu)*: a subunit that is sampled from a psu that has been selected in the sample. 
 
 *Two stage cluster sampling*: A cluster sampling design in which the ssus in selected psus are sampled. 
+
+### Exercises 
+
+## Chapter 6: Sampling with Unequal Probabilities 
+
+### Vocabulary 
+
+### Code 
+
+### Exercises 

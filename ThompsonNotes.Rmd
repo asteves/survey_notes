@@ -1,0 +1,311 @@
+---
+title: "Sampling Notes" 
+---
+
+## Chapter 1 
+
+**Sampling**: Selecting some part of a population to observe so that we can estimate a population parameter 
+
+The basic setup of sampling: 
+
+- Population is known and of finite size *N* units $i \in \{1,...,N\}$
+- Each unit has an associated value of interest (y-value) which is fixed and unknown 
+
+**Sampling Design**: The procedure through which the sample of units is selected from the population 
+
+## Chapter 2 
+
+### Simple Random Sampling
+
+**Simple Random Sampling**: A sampling design in which *n* distinct units are selected from *N* units in the population in such a way that every possible combination of *n* units is equally likely to be in the selected sample. 
+
+SRS is also known as random sampling without replacement. 
+
+The inclusion probability for SRS is the same for all units. The probability that the $i^{th}$ unit of the population is included is $\pi_i = \frac{n}{N}$. A SRS **guarantees** that each possible sample of *n* units for all units. 
+
+We estimate the population mean with SRS as follows: 
+
+- $\bar{y}$ is unbiased for the population mean $\mu$. We define $\bar{y} = \frac{1}{n}\sum_{i=1}^{n}y_i$
+
+- $s^2$ is unbiased for the population variance $\sigma^2$. We define $s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(y_i - \bar{y})^2$
+
+- The variance of $\bar{y}$ with SRS is $V[\widehat{\bar{y}}] = \frac{N-n}{N}\frac{s^2}{n}$. The standard error is defined by taking the square root of this quantity. 
+
+- To estimate the population total an unbiased estimator $\tau = N\mu$. An unbiased estimator of $V[\tau]$ is $N(N-n)\frac{s^2}{n}$
+
+### Underlying ideas for SRS 
+
+$\bar{y}$ is a random variable whose expectation is the population parameter where the expectation is taken over all possible samples. This makes $\bar{y}$ *design-unbiased* and this does not depend on any assumptions about the population. The variance estimates are design unbiased as well. 
+
+### Derivations for SRS 
+
+$$\begin{aligned}
+E[\bar{y}] &= \sum\bar{y_s}P(s) \\
+E[\bar{y}] &= \frac{1}{n} \sum y_i\frac{\binom{N-1}{n-1}}{\binom{N}{n}} \\
+E[\bar{y}] &= \frac{1}{N}\sum y_i
+\end{aligned}$$
+
+An alternative derivation 
+
+$$\begin{aligned}
+E[\bar{y}] &= \frac{1}{n}\sum_{i=1}^{N}y_iE[z_i] \\
+E[\bar{y}] &= \frac{1}{n}\sum_{i = 1}^{N}y_i\frac{n}{N}\\
+E[\bar{y}] &= \frac{1}{n}\frac{n}{N}\sum_{i=1}^{N}y_i \\
+E[\bar{y}] &= \frac{1}{N}\sum_{i=1}^{N} y_i
+\end{aligned}$$
+To derive the variance of the sample mean, see pages 21-22. 
+
+### Examples and Exercises 
+
+Example 1 p. 16 
+
+```{r}
+sample_mean <- function(vec){
+  return(sum(vec)/length(vec))
+}
+
+sample_var <- function(vec){
+  ybar <- sample_mean(vec)
+  n <- length(vec)
+  # finite population correction
+  return((1/(n-1))*sum((vec - ybar)^2))
+}
+
+var_sample_mean <- function(vec, N){
+  n <- length(vec)
+  # finite population correction 
+  fpc <- (N-n)/N
+  return(fpc*(sample_var(vec)/n))
+}
+
+se_mean <- function(vec, N){
+  return(sqrt(var_sample_mean(vec,N)))
+}
+
+estimate_pop_total <- function(vec, N){
+  return(N*sample_mean(vec))
+}
+
+var_pop_total <- function(vec, N){
+  return(N^2*var_sample_mean(vec,N))
+}
+## Caribou Example 1 page 16
+N <- 286
+sample <- c(1,50,21,98,2,36,4,29,7,15,86,10,21,5,4)
+
+# Get sample mean, sample variance, variance and standard error 
+# of the sample mean, the population total estimate, variance of
+# the population total estimate and standard error of pop total 
+# estimate
+sample_mean(sample)
+sample_var(sample)
+var_sample_mean(sample, N)
+se_mean(sample,N)
+estimate_pop_total(sample,N)
+var_pop_total(sample,N)
+sqrt(var_pop_total(sample,N))
+```
+
+Example 2 p.18 
+
+```{r}
+## All possible samples 
+lectures <- tibble::tibble(
+  unit = 1:4,
+  y_i = c(10,17,13,20)
+)
+
+## all possible sample of 2 from size 4. Will equal 6 
+choose(4,2)
+
+## Generate the eight unique samples 
+samples <-combn(c(1,2,3,4),2)
+
+mat <- matrix(data = NA, nrow = 12, ncol = 4)
+
+for(i in seq(1,12,by =2)){
+  ys <- lectures$y_i[c(samples[i],samples[i+1])]
+  ybar <- sample_mean(ys)
+  pop_total <- estimate_pop_total(ys,N = 4)
+  s2 <- sample_var(vec = ys)
+  var_ybar <- var_pop_total(ys, 4)
+  mat <- rbind(mat, c(ybar, pop_total, s2, var_ybar))
+}
+
+mat <- mat[rowSums(is.na(mat)) !=ncol(mat),]
+
+## Get Expected totals
+colMeans(mat)
+```
+
+Example 3 p. 20 
+
+```{r}
+sample_RS <- c(2,4,0,4,5)
+
+yn_bar <- mean(sample_RS)
+
+yv_bar <- mean(unique(sample_RS))
+yv_bar
+```
+
+Example 4 p. 32 
+
+```{r}
+fir <- boot::fir
+
+y <- fir$count
+
+## Get true population mean 
+mu <- mean(y)
+
+# Simulate repeated draws 
+N <- 10000
+ybar <- vector(mode = "logical",length = N)
+
+for(i in 1:N){
+  ybar[i] <- mean(y[sample(1:50, 5)])
+}
+## Expected value of ybar 
+mean(ybar)
+
+## MSE 
+mean((ybar - mu)^2)
+```
+
+Exercise 2 p.36
+
+```{r}
+# A SRS of 10 households is selected from a population of 100 households. 
+N <- 100
+y <- c(2,5,1,4,4,3,2,5,2,3)
+
+## Estimate the total number of people in the population and variance of the estimator 
+estimate_pop_total(y, N)
+
+var_pop_total(y, N)
+
+## Estimate the mean number of people per household and estimate the variance of the estimator 
+sample_mean(y)
+
+var_sample_mean(y, N)
+```
+
+Exercise 3 p. 36 
+
+```{r}
+## Consider a population N = 5
+N <- 5
+y <- c(3,1,0,1,5)
+i <- 1:5
+
+# Consider a SRS with a sample size n = 3.
+n <- 3
+## What is the probability of each sample being the one selected 
+pi <- n/N
+pi
+
+## List every possible sample of size n  = 3
+samples <- t(combn(i, 3))
+samples
+
+## Give values of the population parameters mu tau sigma^2
+pop_mean <- mean(y)
+pop_sum <- sum(y)
+pop_var <- var(y)*(N/N-1)
+pop_med <- median(y)
+
+# B) For each sample, compute the sample mean ybar and the sample median demonstrate that the sample mean is unbiased for the population 
+ybar <- vector(mode = "numeric", length = 10)
+ymed <- vector(mode = "numeric", length = 10)
+for(i in 1:length(ybar)){
+  samp <- y[as.vector(samples[i,])]
+  ybar[i] <- mean(samp)
+  ymed[i] <- median(samp)
+}
+## sample mean is an unbiased estimator 
+mean(ybar) - pop_mean == 0
+
+## sample median is not unbiased
+mean(ymed) - pop_med == 0
+```
+
+Exercise 4 p.36 
+
+Show that $E[s^2] = \sigma^2$ 
+
+$$\begin{aligned}
+E[s^2] &= E[\frac{n}{n-1}(\bar{X^2}-\bar{X}^2)] \\
+E[s^2] &= \frac{n}{n-1}E[\bar{X^2}-\bar{X}^2)]\\
+E[s^2] &= \frac{n}{n-1}\left(\frac{n-1}{n}\sigma^2 \right) \\
+E[s^2] &= \sigma^2
+\end{aligned}$$
+Exercise 6 p.37 
+
+```{r}
+
+trees <- datasets::trees
+y <- trees$Volume
+mu <- mean(y)
+N <- length(y)
+n <- 10
+
+# Repeat the simulation exercise using n = 10 and n = 15 
+ybar <- vector(mode = "logical", length = 10000)
+var_y <- vector(mode = "logical", length = 10000)
+set.seed(1234)
+for(i in 1:length(ybar)){
+  smp <- y[sample(1:N, n)]
+  ybar[i] <- mean(smp)
+  var_y[i] <- var_sample_mean(smp, 31)
+  
+}
+## E_y
+mean(ybar)
+
+## V[ybar]
+mean(var_y)
+
+## MSE 
+mean((ybar - mu)^2)
+
+### B use n = 15 
+n = 15
+ybar <- vector(mode = "logical", length = 10000)
+var_y <- vector(mode = "logical", length = 10000)
+set.seed(1234)
+for(i in 1:length(ybar)){
+  smp <- y[sample(1:N, n)]
+  ybar[i] <- mean(smp)
+  var_y[i] <- var_sample_mean(smp, 31)
+  
+}
+## E_y
+mean(ybar)
+
+## V[ybar]
+mean(var_y)
+
+## MSE 
+mean((ybar - mu)^2)
+```
+
+### Random Sampling with Replacement
+
+**Random Sampling with Replacement**: A sample of *n* units selected from a population of size *N*, returning each unit to the population after it has been drawn. 
+
+- Every possible sequence of *n* units has equal probability under the design. 
+
+- The plug in estimator $\bar{y_n} = \frac{1}{n}\sum_{i=1}^{n} y_i$. 
+
+- The variance of the plug-in sample mean estimator is $V[\hat{\bar{y_n}}] = \frac{s^2}{n}$ which is unbiased for the parameter $V[\bar{y_n}] = \frac{N-1}{nN}\sigma^2$.
+
+The variance of the SRS sample mean is in general lower than the variance of the sample mean taken via random sampling with replacement. 
+
+In random sampling with replacement $\bar{y_n}$ depends on the number of times each unit is selected. This is why the notation is a bit different. Two surveys that observe the same distinct set of units but with different repeats in the sample will generally yield different estimates. 
+
+**Effective sample size**: In random sampling with replacement, this is the number of distinct units in the sample (denoted v). 
+
+- $\bar{y_v} = \frac{1}{v}\sum_{i=1}^{n}y_i$. This quantity is an unbiased estimator of the population mean. 
+
+## Chapter 3: Confidence Intervals
