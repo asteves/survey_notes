@@ -470,8 +470,148 @@ for(i in 1:length(d)){
   print(round(n))
 }
 
+## With FPC 
 for(i in 1:length(d)){
   print(round(ssf_wfpc(N,sigma_2,t_better[i],d[i])))
 }
 
 ```
+
+## Chapter 5: Estimating Proportions, Ratios, and Subpopulation Means 
+
+We can use the the same formulas as before, but some special features of note: 
+- Formulas simplify considerably with attribute data
+- Exact Confidence Intervals are possible
+- A sample size sufficient for a desired absolute precision may be chosen without any information on population parameters 
+
+### Estimating a population proportion 
+
+$$p = \frac{1}{N}sum_{i=1}^{N}y_i = \mu$$ 
+
+Finite population variance 
+
+$$s^2 = \frac{n}{n-1}\hat{p}(1-\hat{p})$$
+
+Variance of the estimator 
+
+$$V[\hat{p}] = \frac{N-n}{N-1}\frac{\hat{p}(1-\hat{p})}{n}$$
+The first term is the FPC (I think) so we can ignore it to get an estimator that is slightly too large. 
+
+Confidence intervals work as expected 
+
+$$\hat{p} \pm \sqrt{V[\hat{p}]}$$
+
+### Sample size for estimating a proportion 
+
+Sample size requirements when we ignore the finite population correction 
+
+$$n_0 = \frac{z^2p(1-p)}{d^2}$$
+
+When including the FPC 
+
+$$n = \frac{1}{\frac{1}{n_0} + \frac{1}{N}}$$
+where $n_0$ is defined as above. 
+
+Like before these formulas depend on an estimate of $p$. If $p$ is unknown use $p = 0.5$ because this is the value for which the function above takes on its maximum value as a function of p. To see this, simply look at the part of the function that includes $p$. 
+
+$$\begin{aligned}
+\frac{d}{dp} &= [p(1-p)]' \\
+0 &= 1-2p \\
+p &= \frac{1}{2}
+\end{aligned}$$
+
+### Estimating a Ratio 
+
+The population ratio is estimated by dividing the total y-values by the total x-values in the samples 
+
+$$r = \frac{\sum_{i=1}^{n}y_i}{\sum_{i=1}^{n}x_i} = \frac{\bar{y}}{\bar{x}}$$
+Ratio estimators are not design unbiased. More on this in [Chapter 7](#chap7) and [Chapter 12](#chap12)
+
+### Estimating a Mean, total, or Population of a subpopulation
+
+An estimator for sub-population with characteristic $a_i$ in a sample of $n$ with attribute $n_1$ is: 
+
+$$\hat{p_i} = \frac{a_i}{n_i}$$
+
+This proportion has two random variables: $a_i$ and $n_i$. To estimate the sub-population mean, we have *N* units in a population. Let $N_k$ be the number belonging to the $k^{th}$ sub-population. The variable of interest $y_{ik}$. 
+
+The total is:
+
+$$\tau_k = \sum_{i=1}^{N}y_{ki}$$
+The estimator of the mean is design unbiased 
+
+$$\bar{y}_k =\frac{1}{n_k} \sum_{i=1}^{n_k}y_{ki}$$
+
+Proof sketch. 
+
+1. Condition on the domain sample size $n_k$. Given $n_k$ every possible combination of $n_k$ of the $N_k$ sub-population units has equal probability of being selected via SRS. 
+
+2. Given (1), $\bar{y}_k$ behaves as the sample mean of a SRS of $n_k$ from $N_k$: $E[\bar{y}_k|n_k] = \mu_k$
+
+3. $E[E[\bar{y}_k|n_k]] = E[\bar{y}_k] = \mu_k$
+
+The variance of the subpopulation mean 
+
+$$\begin{aligned}
+V[\bar{y}_k] &= E[V[\bar{y}_k|n_k]] + V[E[\bar{y}|n_k]] \\
+V[\bar{y}_k] &= E[V[\bar{y}_k|n_k]] + V[\mu_k] \\
+V[\bar{y}_k] &= E[V[\bar{y}_k|n_k]]
+\end{aligned}$$
+
+Given SRS 
+
+$$V[\bar{y}_k | n_k] = \sigma^2_k\left(\frac{1}{n_k} - \frac{1}{N_k}\right)$$
+
+where $\sigma^2_k$ is the population variance for units in the $k^{th}$ population. $\sigma^2_k = \frac{1}{N_k -1}\sum_{i=1}^{N_k}(y_{ki} - \mu_k)^2$
+
+The unconditional variance for the estimator is thus: 
+
+$$V[\bar{y}_k] = \frac{N_k - n_k}{N_k n_k}s^2_k$$
+
+where $s^2_k$ is the sample variance of the sub-population of interest. Confidence intervals are found in the usual way. If the sub-population is unknown, we replace the FPC with its expected value $\frac{N-n}{N}$
+
+### Exercises 
+
+Exercise 1 p. 66
+
+```{r}
+# Estimate the population proportion in favor and give
+# a 95% CI for population proportion 
+# SRS of 1200 552 reported in favor 
+p_hat <- 552/1200
+
+v_phat <- function(n, p){
+  return((p*(1-p))/n)
+}
+
+N <- 1800000
+n <- 1200
+
+lwr <- round(p_hat - 1.96*sqrt(v_phat(n, p_hat)),2)
+upp <- round(p_hat + 1.96*sqrt(v_phat(n, p_hat)),2)
+
+print(paste(p_hat, "with CI", lwr, upp))
+```
+
+Exercise 3 p. 66
+```{r}
+
+## What sample size is required to estimate the proportion of people with blood type O in a population of 1500 people to be within 0.02 of the true proportion with 95% confidence? Assume no prior knowledge about the proportion.
+
+sample_size_prop_nofpc <- function(p, d){
+  n0 <- (1.96^2*p*(1-p))/d^2
+  return(n0)
+}
+
+N <- 1500
+p <- .5
+d <- 0.02
+
+## Without FPC 
+sample_size_prop_nofpc(p, d)
+
+## With FPC 
+round((1)/(1/sample_size_prop_nofpc(p,d) + 1/1500))
+
+```
+

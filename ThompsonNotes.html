@@ -321,10 +321,10 @@ for(i in 1:N){
 }
 ## Expected value of ybar 
 mean(ybar)</code></pre>
-<pre><code>## [1] 2.13458</code></pre>
+<pre><code>## [1] 2.15162</code></pre>
 <pre class="r"><code>## MSE 
 mean((ybar - mu)^2)</code></pre>
-<pre><code>## [1] 0.4377296</code></pre>
+<pre><code>## [1] 0.4359984</code></pre>
 <p>Exercise 2 p.36</p>
 <pre class="r"><code># A SRS of 10 households is selected from a population of 100 households. 
 N &lt;- 100
@@ -609,12 +609,111 @@ for(i in 1:length(d)){
 <pre><code>## [1] 695
 ## [1] 173
 ## [1] 43</code></pre>
-<pre class="r"><code>for(i in 1:length(d)){
+<pre class="r"><code>## With FPC 
+for(i in 1:length(d)){
   print(round(ssf_wfpc(N,sigma_2,t_better[i],d[i])))
 }</code></pre>
 <pre><code>## [1] 410
 ## [1] 148
 ## [1] 41</code></pre>
+</div>
+</div>
+<div id="chapter-5-estimating-proportions-ratios-and-subpopulation-means" class="section level2">
+<h2>Chapter 5: Estimating Proportions, Ratios, and Subpopulation Means</h2>
+<p>We can use the the same formulas as before, but some special features of note: - Formulas simplify considerably with attribute data - Exact Confidence Intervals are possible - A sample size sufficient for a desired absolute precision may be chosen without any information on population parameters</p>
+<div id="estimating-a-population-proportion" class="section level3">
+<h3>Estimating a population proportion</h3>
+<p><span class="math display">\[p = \frac{1}{N}sum_{i=1}^{N}y_i = \mu\]</span></p>
+<p>Finite population variance</p>
+<p><span class="math display">\[s^2 = \frac{n}{n-1}\hat{p}(1-\hat{p})\]</span></p>
+<p>Variance of the estimator</p>
+<p><span class="math display">\[V[\hat{p}] = \frac{N-n}{N-1}\frac{\hat{p}(1-\hat{p})}{n}\]</span> The first term is the FPC (I think) so we can ignore it to get an estimator that is slightly too large.</p>
+<p>Confidence intervals work as expected</p>
+<p><span class="math display">\[\hat{p} \pm \sqrt{V[\hat{p}]}\]</span></p>
+</div>
+<div id="sample-size-for-estimating-a-proportion" class="section level3">
+<h3>Sample size for estimating a proportion</h3>
+<p>Sample size requirements when we ignore the finite population correction</p>
+<p><span class="math display">\[n_0 = \frac{z^2p(1-p)}{d^2}\]</span></p>
+<p>When including the FPC</p>
+<p><span class="math display">\[n = \frac{1}{\frac{1}{n_0} + \frac{1}{N}}\]</span> where <span class="math inline">\(n_0\)</span> is defined as above.</p>
+<p>Like before these formulas depend on an estimate of <span class="math inline">\(p\)</span>. If <span class="math inline">\(p\)</span> is unknown use <span class="math inline">\(p = 0.5\)</span> because this is the value for which the function above takes on its maximum value as a function of p. To see this, simply look at the part of the function that includes <span class="math inline">\(p\)</span>.</p>
+<p><span class="math display">\[\begin{aligned}
+\frac{d}{dp} &amp;= [p(1-p)]&#39; \\
+0 &amp;= 1-2p \\
+p &amp;= \frac{1}{2}
+\end{aligned}\]</span></p>
+</div>
+<div id="estimating-a-ratio" class="section level3">
+<h3>Estimating a Ratio</h3>
+<p>The population ratio is estimated by dividing the total y-values by the total x-values in the samples</p>
+<p><span class="math display">\[r = \frac{\sum_{i=1}^{n}y_i}{\sum_{i=1}^{n}x_i} = \frac{\bar{y}}{\bar{x}}\]</span> Ratio estimators are not design unbiased. More on this in <a href="#chap7">Chapter 7</a> and <a href="#chap12">Chapter 12</a></p>
+</div>
+<div id="estimating-a-mean-total-or-population-of-a-subpopulation" class="section level3">
+<h3>Estimating a Mean, total, or Population of a subpopulation</h3>
+<p>An estimator for sub-population with characteristic <span class="math inline">\(a_i\)</span> in a sample of <span class="math inline">\(n\)</span> with attribute <span class="math inline">\(n_1\)</span> is:</p>
+<p><span class="math display">\[\hat{p_i} = \frac{a_i}{n_i}\]</span></p>
+<p>This proportion has two random variables: <span class="math inline">\(a_i\)</span> and <span class="math inline">\(n_i\)</span>. To estimate the sub-population mean, we have <em>N</em> units in a population. Let <span class="math inline">\(N_k\)</span> be the number belonging to the <span class="math inline">\(k^{th}\)</span> sub-population. The variable of interest <span class="math inline">\(y_{ik}\)</span>.</p>
+<p>The total is:</p>
+<p><span class="math display">\[\tau_k = \sum_{i=1}^{N}y_{ki}\]</span> The estimator of the mean is design unbiased</p>
+<p><span class="math display">\[\bar{y}_k =\frac{1}{n_k} \sum_{i=1}^{n_k}y_{ki}\]</span></p>
+<p>Proof sketch.</p>
+<ol style="list-style-type: decimal">
+<li><p>Condition on the domain sample size <span class="math inline">\(n_k\)</span>. Given <span class="math inline">\(n_k\)</span> every possible combination of <span class="math inline">\(n_k\)</span> of the <span class="math inline">\(N_k\)</span> sub-population units has equal probability of being selected via SRS.</p></li>
+<li><p>Given (1), <span class="math inline">\(\bar{y}_k\)</span> behaves as the sample mean of a SRS of <span class="math inline">\(n_k\)</span> from <span class="math inline">\(N_k\)</span>: <span class="math inline">\(E[\bar{y}_k|n_k] = \mu_k\)</span></p></li>
+<li><p><span class="math inline">\(E[E[\bar{y}_k|n_k]] = E[\bar{y}_k] = \mu_k\)</span></p></li>
+</ol>
+<p>The variance of the subpopulation mean</p>
+<p><span class="math display">\[\begin{aligned}
+V[\bar{y}_k] &amp;= E[V[\bar{y}_k|n_k]] + V[E[\bar{y}|n_k]] \\
+V[\bar{y}_k] &amp;= E[V[\bar{y}_k|n_k]] + V[\mu_k] \\
+V[\bar{y}_k] &amp;= E[V[\bar{y}_k|n_k]]
+\end{aligned}\]</span></p>
+<p>Given SRS</p>
+<p><span class="math display">\[V[\bar{y}_k | n_k] = \sigma^2_k\left(\frac{1}{n_k} - \frac{1}{N_k}\right)\]</span></p>
+<p>where <span class="math inline">\(\sigma^2_k\)</span> is the population variance for units in the <span class="math inline">\(k^{th}\)</span> population. <span class="math inline">\(\sigma^2_k = \frac{1}{N_k -1}\sum_{i=1}^{N_k}(y_{ki} - \mu_k)^2\)</span></p>
+<p>The unconditional variance for the estimator is thus:</p>
+<p><span class="math display">\[V[\bar{y}_k] = \frac{N_k - n_k}{N_k n_k}s^2_k\]</span></p>
+<p>where <span class="math inline">\(s^2_k\)</span> is the sample variance of the sub-population of interest. Confidence intervals are found in the usual way. If the sub-population is unknown, we replace the FPC with its expected value <span class="math inline">\(\frac{N-n}{N}\)</span></p>
+</div>
+<div id="exercises-2" class="section level3">
+<h3>Exercises</h3>
+<p>Exercise 1 p. 66</p>
+<pre class="r"><code># Estimate the population proportion in favor and give
+# a 95% CI for population proportion 
+# SRS of 1200 552 reported in favor 
+p_hat &lt;- 552/1200
+
+v_phat &lt;- function(n, p){
+  return((p*(1-p))/n)
+}
+
+N &lt;- 1800000
+n &lt;- 1200
+
+lwr &lt;- round(p_hat - 1.96*sqrt(v_phat(n, p_hat)),2)
+upp &lt;- round(p_hat + 1.96*sqrt(v_phat(n, p_hat)),2)
+
+print(paste(p_hat, &quot;with CI&quot;, lwr, upp))</code></pre>
+<pre><code>## [1] &quot;0.46 with CI 0.43 0.49&quot;</code></pre>
+<p>Exercise 3 p. 66</p>
+<pre class="r"><code>## What sample size is required to estimate the proportion of people with blood type O in a population of 1500 people to be within 0.02 of the true proportion with 95% confidence? Assume no prior knowledge about the proportion.
+
+sample_size_prop_nofpc &lt;- function(p, d){
+  n0 &lt;- (1.96^2*p*(1-p))/d^2
+  return(n0)
+}
+
+N &lt;- 1500
+p &lt;- .5
+d &lt;- 0.02
+
+## Without FPC 
+sample_size_prop_nofpc(p, d)</code></pre>
+<pre><code>## [1] 2401</code></pre>
+<pre class="r"><code>## With FPC 
+round((1)/(1/sample_size_prop_nofpc(p,d) + 1/1500))</code></pre>
+<pre><code>## [1] 923</code></pre>
 </div>
 </div>
 
