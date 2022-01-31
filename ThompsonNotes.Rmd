@@ -60,6 +60,7 @@ To derive the variance of the sample mean, see pages 21-22.
 Example 1 p. 16 
 
 ```{r}
+# sampling functions 
 sample_mean <- function(vec){
   return(sum(vec)/length(vec))
 }
@@ -89,6 +90,9 @@ estimate_pop_total <- function(vec, N){
 var_pop_total <- function(vec, N){
   return(N^2*var_sample_mean(vec,N))
 }
+```
+
+```{r}
 ## Caribou Example 1 page 16
 N <- 286
 sample <- c(1,50,21,98,2,36,4,29,7,15,86,10,21,5,4)
@@ -309,3 +313,165 @@ In random sampling with replacement $\bar{y_n}$ depends on the number of times e
 - $\bar{y_v} = \frac{1}{v}\sum_{i=1}^{n}y_i$. This quantity is an unbiased estimator of the population mean. 
 
 ## Chapter 3: Confidence Intervals
+
+Let *I* represent a confidence interval for the population mean $\mu$. Choose a small number $\alpha$ as the allowable probability of error such that the procedure has a probability $P(\mu \in I) = 1-\alpha$. 
+
+*I* is a random variable and the endpoints of *I* will vary from sample to sample. Conversely, $\mu$ is fixed and unknown parameter. 
+
+Under SRS a $1-\alpha$ CI means that for $1-\alpha$ of the possible samples, the interval contains the true value of the population mean. 
+
+An approximate $100(1-\alpha)\%$ CI for $\mu$ is 
+
+$$\bar{y} \pm t\sqrt{\frac{N-n}{N}\frac{s^2}{n}}$$
+where t is the upper $\frac{\alpha}{2}$ point of a t-distribution with n-1 degrees of freedom. 
+
+We rely here for this on the finite population central limit theorem which shows that the distribution will converge to a standard normal distribution as *n* and *N* grow large. 
+
+### Exercises 
+
+Exercise 3 p.51
+
+```{r}
+## Consider a population N = 5
+N <- 5
+n <- 3
+y <- c(3,1,0,1,5)
+i <- 1:5
+
+## List every possible sample of size n  = 3
+samples <- t(combn(i, n))
+samples
+
+## Give values of the population parameters mu tau sigma^2
+pop_mean <- mean(y)
+pop_var <- var(y)
+t <- qt(0.975, df = n -1)
+
+# B) For each sample, compute the sample mean ybar and the sample median demonstrate that the sample mean is unbiased for the population 
+ybar <- vector(mode = "numeric", length = 10)
+var_ybar <- vector(mode = "numeric", length = 10)
+s2 <- vector(mode = "numeric", length = 10)
+
+## Needed for part 3 to compute coverage 
+lwr_bound <- vector(mode = "numeric", length = 10)
+upp_bound <- vector(mode = "numeric", length = 10)
+
+## Simulate all possible samples 
+for(i in 1:length(ybar)){
+  samp <- y[as.vector(samples[i,])]
+  ybar[i] <- mean(samp)
+  s2[i] <- sample_var(samp)
+  var_ybar[i] <- var_sample_mean(samp, N)
+  print(samp)
+  lwr_bound[i] <- mean(samp) -
+    t*sqrt(var_sample_mean(samp, 5))/sqrt(n)
+  upp_bound[i] <- mean(samp) +
+    t*sqrt(var_sample_mean(samp, 5))/sqrt(n)
+}
+
+## sample mean is an unbiased estimator 
+mean(ybar) - pop_mean == 0
+
+## sample var is unbiased
+mean(s2) - pop_var == 0
+
+## sample square root is not 
+mean(sqrt(s2))- sqrt(pop_var) == 0
+
+## Coverage function 
+coverage <- function(theta, lb, ub){
+  if(lb <= theta & theta <= ub){
+    return(TRUE)
+  }
+  else{
+    return(FALSE)
+  }
+}
+covered <- vector(mode = "numeric", length = 10)
+for(i in 1:10){
+  covered[i]<-coverage(pop_mean, lwr_bound[i], upp_bound[i])
+}
+
+# Coverage is 90% of samples
+mean(covered)
+
+```
+
+## Chapter 4: Sample Size 
+
+The first question when planning a survey is what sample size should be used. We estimate a statistic $\hat{\theta}$ that is an unbiased estimator of $\theta$ which is the population parameter of interest. 
+
+We want to choose a maximum allowable difference *d* between the true parameter and the estimate and allow for some small probability $\alpha$ that the error could exceed our chosen specification. 
+
+This means that we choose our sample size *n* such that $P(|\hat{\theta} - \theta) > d < \alpha$
+
+**Sample size for estimating a population mean** 
+
+Under SRS 
+
+$$V[\bar{y}] = (N - n)\frac{\sigma^2}{Nn}$$ 
+
+Thus $d = z \sqrt{V[\bar{y}]}$ assuming that that our estimator is normally distributed, which is the case for a population mean. 
+
+Solving for *n* 
+
+$$\begin{aligned}
+n &= \frac{1}{\frac{d^2\sigma^2}{t^2} + \frac{1}{N}} \\
+n &= \frac{1}{\frac{1}{n_0} + \frac{1}{N}}
+\end{aligned}$$
+
+with an appropriate substitution. The only difference to get a population total is to multiply $n_0$ by $N^2$ in the above formula. 
+
+Both of these formulas presume knowledge of the population variance, which is generally unknown. To get an estimate, we tend to either guess completely or use the results of a previous survey. 
+
+If we ignore the finite population correct, then we only have to calculate $n_0$. This sample size will always be larger than the sample size with a finite population correction. 
+
+**Sample Size for Relative Precision** 
+
+The formula is now 
+
+$$n = \frac{1}{\frac{r^2\mu^2}{t^2\sigma^2} + \frac{1}{N}}$$
+where *r* represents the relative error of interest. In this formula the population quantity on which sample size depends when the desire is to control relative precision is the coefficient of variation in the population. 
+
+### Exercises 
+
+Exercise 1 p.56 
+```{r}
+sample_size_formula<- function(N, sigma_2, t,d){
+  n0_num <- N^2*sigma_2*t^2
+  n0_den <- d^2
+  return(n0_num/n0_den)
+}
+
+ssf_wfpc <- function(N, sigma_2, t, d){
+  n0 = sample_size_formula(N, sigma_2, t, d)
+  return(1/ ((1/n0) + 1/N))
+}
+d <- c(500, 1000, 2000)
+
+# Since n is large, we can get away with this 
+# because it converges to a normal distribution
+t <- 1.96
+
+# A more complete computation is 
+alpha <- 0.05
+# qt() is the quantile function for the t-distribution
+# see ?qt()
+t_better <- qt(1- (alpha/2), df = d-1)
+
+
+## Parameters from problem. N is total population. sigma_2 = $\sigma^2$ = variance given for population
+N <- 1000
+sigma_2 <- 45
+
+## ignore FPC
+for(i in 1:length(d)){
+  n <- sample_size_formula(N = N, sigma_2 = sigma_2, t = t_better[i], d = d[i])
+  print(round(n))
+}
+
+for(i in 1:length(d)){
+  print(round(ssf_wfpc(N,sigma_2,t_better[i],d[i])))
+}
+
+```
